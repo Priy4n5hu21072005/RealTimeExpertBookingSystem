@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
 
-function Home() {
+function Home({ search }) {
 
     const [experts, setExperts] =
         useState([]);
-
-    const [search, setSearch] =
-        useState("");
 
     const [slots, setSlots] =
         useState({});
@@ -45,6 +42,7 @@ function Home() {
 
                 setSlots((prev) => ({
                     ...prev,
+
                     [expertId]:
                         response.data.availableDates,
                 }));
@@ -128,6 +126,7 @@ function Home() {
                     ) ||
 
                 expert.skills.some((skill) =>
+
                     skill
                         .toLowerCase()
                         .includes(
@@ -139,101 +138,252 @@ function Home() {
 
     return (
 
-        <div>
+        <div className="
+            min-h-screen
+            bg-gray-100
+            p-8
+        ">
 
-            <h1>All Experts</h1>
+            <h1 className="
+                text-4xl
+                font-bold
+                text-center
+                mb-10
+            ">
+                Explore Experts
+            </h1>
 
-            <input
-                type="text"
-                placeholder="Search experts..."
-                value={search}
-                onChange={(e) =>
-                    setSearch(e.target.value)
-                }
-                style={{
-                    padding: "10px",
-                    width: "300px",
-                    marginBottom: "20px",
-                }}
-            />
+            {filteredExperts.length === 0 ? (
 
-            {filteredExperts.map((expert) => (
+                <div className="
+                    text-center
+                    text-2xl
+                    text-gray-500
+                    mt-20
+                ">
+                    No Experts Found
+                </div>
 
-                <div
-                    key={expert._id}
-                    style={{
-                        border: "1px solid gray",
-                        padding: "10px",
-                        marginBottom: "10px",
-                    }}
-                >
+            ) : (
 
-                    <h2>
-                        {expert.user.name}
-                    </h2>
+                <div className="
+                    grid
+                    grid-cols-1
+                    md:grid-cols-2
+                    lg:grid-cols-3
+                    gap-8
+                ">
 
-                    <p>
-                        Expertise:
-                        {" "}
-                        {expert.expertise}
-                    </p>
+                    {filteredExperts.map((expert) => (
 
-                    <p>
-                        Experience:
-                        {" "}
-                        {expert.experience}
-                        years
-                    </p>
+                        <div
+                            key={expert._id}
 
-                    <p>
-                        Hourly Rate:
-                        ₹{expert.hourlyRate}
-                    </p>
+                            className="
+                                bg-white
+                                rounded-2xl
+                                p-6
+                                shadow-md
+                                hover:shadow-2xl
+                                hover:-translate-y-2
+                                transition
+                                duration-300
+                            "
+                        >
 
-                    <p>
-                        Skills:
-                        {" "}
-                        {expert.skills.join(", ")}
-                    </p>
+                            {/* AVATAR */}
 
-                    <button
-                        onClick={() =>
-                            fetchAvailableSlots(
-                                expert._id
-                            )
-                        }
-                    >
-                        Show Available Slots
-                    </button>
+                            <div className="
+                                w-16
+                                h-16
+                                rounded-full
+                                bg-black
+                                flex
+                                items-center
+                                justify-center
+                                text-white
+                                text-2xl
+                                font-bold
+                                mb-4
+                            ">
+                                {expert.user.name
+                                    .charAt(0)
+                                    .toUpperCase()}
+                            </div>
 
-                    <br />
-                    <br />
+                            {/* NAME */}
 
-                    {slots[expert._id]?.map(
-                        (date, index) => (
+                            <h2 className="
+                                text-2xl
+                                font-bold
+                                text-black
+                                mb-3
+                            ">
+                                {expert.user.name}
+                            </h2>
+
+                            {/* EXPERTISE */}
+
+                            <div className="mb-4">
+
+                                <span className="
+                                    bg-red-400
+                                    text-black
+                                    font-bold
+                                    px-3
+                                    py-1
+                                    rounded-full
+                                    text-sm
+                                ">
+                                    {expert.expertise}
+                                </span>
+
+                            </div>
+
+                            {/* EXPERIENCE */}
+
+                            <p className="
+                                mb-2
+                                text-gray-700
+                            ">
+                                <span className="
+                                    font-semibold
+                                ">
+                                    Experience:
+                                </span>
+
+                                {" "}
+                                {expert.experience}
+                                {" "}
+                                years
+                            </p>
+
+                            {/* RATE */}
+
+                            <p className="
+                                mb-4
+                                text-gray-700
+                            ">
+                                <span className="
+                                    font-semibold
+                                ">
+                                    Hourly Rate:
+                                </span>
+
+                                {" "}
+                                ₹{expert.hourlyRate}
+                            </p>
+
+                            {/* SKILLS */}
+
+                            <div className="mb-5">
+
+                                <p className="
+                                    font-semibold
+                                    mb-2
+                                ">
+                                    Skills:
+                                </p>
+
+                                <div className="
+                                    flex
+                                    flex-wrap
+                                    gap-2
+                                ">
+
+                                    {expert.skills.map(
+                                        (skill, index) => (
+
+                                            <span
+                                                key={index}
+
+                                                className="
+                                                    bg-gray-200
+                                                    px-3
+                                                    py-1
+                                                    rounded-full
+                                                    text-sm
+                                                "
+                                            >
+                                                {skill}
+                                            </span>
+
+                                        )
+                                    )}
+
+                                </div>
+
+                            </div>
+
+                            {/* SHOW SLOT BUTTON */}
 
                             <button
-                                key={index}
                                 onClick={() =>
-                                    handleBookAppointment(
-                                        expert._id,
-                                        date
+                                    fetchAvailableSlots(
+                                        expert._id
                                     )
                                 }
-                                style={{
-                                    marginRight:
-                                        "10px",
-                                }}
+
+                                className="
+                                    w-full
+                                    bg-black
+                                    text-white
+                                    py-2
+                                    rounded-xl
+                                    hover:bg-gray-800
+                                    transition
+                                "
                             >
-                                {date}
+                                Show Available Slots
                             </button>
 
-                        )
-                    )}
+                            {/* AVAILABLE DATES */}
+
+                            <div className="
+                                mt-4
+                                flex
+                                flex-wrap
+                                gap-3
+                            ">
+
+                                {slots[expert._id]?.map(
+                                    (date, index) => (
+
+                                        <button
+                                            key={index}
+
+                                            onClick={() =>
+                                                handleBookAppointment(
+                                                    expert._id,
+                                                    date
+                                                )
+                                            }
+
+                                            className="
+                                                bg-black
+                                                text-white
+                                                px-4
+                                                py-2
+                                                rounded-lg
+                                                hover:bg-red-600
+                                                transition
+                                            "
+                                        >
+                                            {date}
+                                        </button>
+
+                                    )
+                                )}
+
+                            </div>
+
+                        </div>
+
+                    ))}
 
                 </div>
 
-            ))}
+            )}
 
         </div>
     );
