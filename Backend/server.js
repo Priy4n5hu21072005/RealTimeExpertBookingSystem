@@ -19,7 +19,9 @@ const corsOptions = {
     ],
     credentials: true
 };
-app.use(cors({ origin: corsOrigin }));
+app.use(cors({
+    origin: process.env.CORS_ORIGIN || "*"
+}));
 app.use(express.json());
 
 app.get("/", (req, res) => {
