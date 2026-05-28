@@ -54,6 +54,10 @@ app.use("/api/auth", authRoutes);
 app.use("/api/experts", expertRoutes);
 app.use("/api/appointments", appointmentRoutes);
 
+app.use("/auth", authRoutes);
+app.use("/experts", expertRoutes);
+app.use("/appointments", appointmentRoutes);
+
 app.get("/api/protected", protect, (req, res) => {
     res.json({
         message: "Protected route accessed",
