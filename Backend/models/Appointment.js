@@ -21,6 +21,19 @@ const appointmentSchema =
         required: true,
       },
 
+      appointmentTime: {
+        type: String,
+      },
+
+      durationHours: {
+        type: Number,
+        min: 1,
+      },
+
+      appointmentEndDate: {
+        type: Date,
+      },
+
       status: {
         type: String,
         default: "pending",

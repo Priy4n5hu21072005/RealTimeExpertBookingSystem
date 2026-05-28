@@ -1,115 +1,177 @@
 # Expert Booking System
 
-A web application built using the MERN stack (MongoDB, Express, React, and Node) that allows users to find experts, check their availability, and book appointments.
+A MERN stack web application that allows customers to find experts, check availability, and book appointments with quick dates or custom calendar date/time slots.
 
 ---
 
 ## Folder Structure
 
-Here is a quick overview of how the codebase is organized:
-
 ```text
 ExpertBookingSystem/
-├── Backend/
-│   ├── config/             # Database connection settings (MongoDB)
-│   ├── controllers/        # Request handling logic (authentication, experts, bookings)
-│   ├── middleware/         # Authentication guard (JWT verification)
-│   ├── models/             # Mongoose schemas (User, ExpertProfile, Appointment)
-│   ├── routes/             # Express API routes
-│   ├── .env.example        # Environment variables template
-│   └── server.js           # Express app entry point
-└── frontend/
-    ├── src/
-    │   ├── components/     # Shared components (like the Navbar)
-    │   ├── pages/          # Application views (Home, Login, Register, Profile creation)
-    │   ├── services/       # API call handlers (Axios client setup)
-    │   ├── App.jsx         # Routes definition
-    │   └── main.jsx        # React application entry point
-    ├── index.html
-    └── vite.config.js
+|-- Backend/
+|   |-- config/             # Database connection settings
+|   |-- controllers/        # Request handling logic
+|   |-- middleware/         # JWT authentication guard
+|   |-- models/             # Mongoose schemas
+|   |-- routes/             # Express API routes
+|   `-- server.js           # Express app entry point
+`-- frontend/
+    |-- src/
+    |   |-- components/     # Shared UI components
+    |   |-- pages/          # Home, Login, Register, Appointments, Profile pages
+    |   |-- services/       # Axios API setup
+    |   |-- App.jsx         # Route definitions
+    |   `-- main.jsx        # React entry point
+    |-- index.html
+    `-- vite.config.js
 ```
 
 ---
 
 ## Key Features
 
-1. **User Authentication**: Register and login as either a **Customer** or an **Expert**. JWTs are stored in local storage for session management.
-2. **Expert Discovery**: View and search experts by name, expertise, or specific skills.
-3. **Availability Management**: The system dynamically scans existing bookings and lists the next 3 available days for an expert.
-4. **Appointment Booking**: Logged-in customers can reserve one of the available dates with their chosen expert.
+1. **User Authentication**: Register and login as a customer or expert.
+2. **Expert Discovery**: View and search experts by name, expertise, or skills.
+3. **Quick Availability**: Show the next 3 available dates for an expert.
+4. **Calendar Booking**: Choose a custom future date from a calendar UI.
+5. **Custom Time Selection**: Select the number of hours first, then choose a start time.
+6. **Overlap Prevention**: The backend blocks overlapping bookings for the same expert.
+7. **My Appointments**: Customers can view booked appointments with date, time, duration, expert, and status.
 
 ---
 
 ## Setup & Installation
 
 ### Prerequisites
-Make sure you have [Node.js](https://nodejs.org/) (v16+) and a running [MongoDB](https://www.mongodb.com/) instance (local or Atlas) installed on your machine.
 
----
+Install [Node.js](https://nodejs.org/) and use a running MongoDB instance, either local MongoDB or MongoDB Atlas.
 
-### Step 1: Set up the Backend
+### Backend
 
 1. Navigate to the backend directory:
+
    ```bash
    cd Backend
    ```
-2. Install the dependencies:
+
+2. Install dependencies:
+
    ```bash
    npm install
    ```
-3. Create a `.env` file in the `Backend` directory:
-   ```bash
-   cp .env.example .env
-   ```
-4. Open the `.env` file and configure your port, MongoDB Connection URI, and JWT Secret:
+
+3. Create a `.env` file in the `Backend` directory and configure it:
+
    ```env
    PORT=5000
    MONGO_URI=your_mongodb_connection_uri
    JWT_SECRET=your_jwt_secret_key
    ```
-5. Start the backend server:
-   - For production:
-     ```bash
-     npm start
-     ```
-   - For development (runs with nodemon auto-restart):
-     ```bash
-     npm run dev
-     ```
 
-The API will now be running on `http://localhost:5000`.
+4. Start the backend server:
 
----
-
-### Step 2: Set up the Frontend
-
-1. Navigate to the frontend directory:
    ```bash
-   cd ../frontend
+   npm start
    ```
-2. Install the dependencies:
-   ```bash
-   npm install
-   ```
-3. Start the Vite development server:
+
+   For development with auto-restart:
+
    ```bash
    npm run dev
    ```
 
-The frontend will run by default on `http://localhost:5173`. Open this URL in your web browser.
+The API runs on `http://localhost:5000`.
+
+### Frontend
+
+1. Navigate to the frontend directory:
+
+   ```bash
+   cd frontend
+   ```
+
+2. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Start the Vite development server:
+
+   ```bash
+   npm run dev
+   ```
+
+The frontend runs on `http://localhost:5173`.
 
 ---
 
 ## API Endpoints
 
 ### Authentication
+
 * `POST /api/auth/register` - Create a new user account.
-* `POST /api/auth/login` - Login to get a JWT token.
+* `POST /api/auth/login` - Login and receive a JWT token.
 
 ### Experts
-* `GET /api/experts` - Retrieve all experts (supports search using query parameters: `?keyword=react`).
-* `POST /api/experts` - Create an expert profile (requires authentication).
+
+* `GET /api/experts` - Retrieve all experts.
+* `POST /api/experts` - Create an expert profile. Requires authentication.
 
 ### Appointments
-* `GET /api/appointments/slots/:expertId` - Fetch the next 3 available calendar days for an expert.
-* `POST /api/appointments` - Book an appointment slot (requires authentication).
+
+* `GET /api/appointments/slots/:expertId` - Fetch the next 3 available dates, booked dates, and booked time slots for an expert.
+* `POST /api/appointments` - Book an appointment. Requires authentication.
+* `GET /api/appointments/my` - Fetch the logged-in customer's appointments.
+
+Date-only booking request:
+
+```json
+{
+  "expertId": "expert_profile_id",
+  "appointmentDate": "2026-06-01"
+}
+```
+
+Custom date and time booking request:
+
+```json
+{
+  "expertId": "expert_profile_id",
+  "appointmentDate": "2026-06-01",
+  "appointmentTime": "10:00",
+  "durationHours": 2
+}
+```
+
+`appointmentTime` uses 24-hour `HH:mm` format. `durationHours` supports values from 1 to 8.
+
+---
+
+## Booking Flow
+
+1. Customer logs in.
+2. Customer opens the experts list.
+3. Customer clicks **Show Available Slots** for an expert.
+4. Customer either chooses a quick available date or uses the calendar.
+5. For custom booking, customer selects a date, number of hours, and start time.
+6. Backend checks for conflicting appointments before saving the booking.
+7. Customer can view the booking from **My Appointments**.
+
+---
+
+## Useful Commands
+
+Run frontend build:
+
+```bash
+cd frontend
+npm run build
+```
+
+Run backend:
+
+```bash
+cd Backend
+npm start
+```

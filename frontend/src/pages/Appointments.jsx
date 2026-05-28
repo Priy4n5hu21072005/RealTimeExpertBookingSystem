@@ -2,6 +2,22 @@ import { useEffect, useState } from "react";
 
 import API from "../services/api";
 
+const formatTime = (time) => {
+    if (!time) {
+        return "Not selected";
+    }
+
+    const [hours, minutes] =
+        time.split(":").map(Number);
+    const date =
+        new Date(2000, 0, 1, hours, minutes);
+
+    return date.toLocaleTimeString(undefined, {
+        hour: "numeric",
+        minute: "2-digit",
+    });
+};
+
 function Appointments() {
 
     const [appointments, setAppointments] =
@@ -111,6 +127,22 @@ function Appointments() {
                                                 month: 'long',
                                                 day: 'numeric'
                                             })}
+                                        </span>
+                                    </p>
+
+                                    <p className="flex justify-between">
+                                        <span className="font-semibold text-gray-500">Time:</span>
+                                        <span>
+                                            {formatTime(appointment.appointmentTime)}
+                                        </span>
+                                    </p>
+
+                                    <p className="flex justify-between">
+                                        <span className="font-semibold text-gray-500">Duration:</span>
+                                        <span>
+                                            {appointment.durationHours
+                                                ? `${appointment.durationHours} ${appointment.durationHours === 1 ? "hour" : "hours"}`
+                                                : "Not selected"}
                                         </span>
                                     </p>
 

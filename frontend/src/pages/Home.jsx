@@ -2,6 +2,121 @@ import { useEffect, useState } from "react";
 import API from "../services/api";
 import { useToast } from "../context/ToastContext";
 
+const dateFormatter = new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+});
+
+const monthFormatter = new Intl.DateTimeFormat(undefined, {
+    month: "long",
+    year: "numeric",
+});
+
+const timeOptions = [
+    "08:00",
+    "09:00",
+    "10:00",
+    "11:00",
+    "12:00",
+    "13:00",
+    "14:00",
+    "15:00",
+    "16:00",
+    "17:00",
+    "18:00",
+];
+
+const durationOptions = [1, 2, 3, 4, 5, 6, 7, 8];
+
+const getDateKey = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+};
+
+const getTodayKey = () => getDateKey(new Date());
+
+const getMonthStart = (date = new Date()) =>
+    new Date(date.getFullYear(), date.getMonth(), 1);
+
+const getCalendarDays = (monthDate) => {
+    const monthStart = getMonthStart(monthDate);
+    const firstDay = monthStart.getDay();
+    const daysInMonth =
+        new Date(
+            monthStart.getFullYear(),
+            monthStart.getMonth() + 1,
+            0
+        ).getDate();
+
+    return [
+        ...Array.from(
+            { length: firstDay },
+            () => null
+        ),
+        ...Array.from(
+            { length: daysInMonth },
+            (_, index) =>
+                new Date(
+                    monthStart.getFullYear(),
+                    monthStart.getMonth(),
+                    index + 1
+                )
+        ),
+    ];
+};
+
+const timeToMinutes = (time) => {
+    const [hours, minutes] =
+        time.split(":").map(Number);
+
+    return hours * 60 + minutes;
+};
+
+const formatTime = (time) => {
+    const [hours, minutes] =
+        time.split(":").map(Number);
+    const date =
+        new Date(2000, 0, 1, hours, minutes);
+
+    return date.toLocaleTimeString(undefined, {
+        hour: "numeric",
+        minute: "2-digit",
+    });
+};
+
+const hasTimeConflict = (
+    bookedSlots,
+    selectedDate,
+    selectedTime,
+    durationHours
+) => {
+    const selectedStart =
+        timeToMinutes(selectedTime);
+    const selectedEnd =
+        selectedStart + durationHours * 60;
+
+    return bookedSlots.some((slot) => {
+        if (slot.date !== selectedDate) {
+            return false;
+        }
+
+        if (!slot.hasCustomTime) {
+            return true;
+        }
+
+        const bookedStart =
+            timeToMinutes(slot.startTime);
+        const bookedEnd =
+            bookedStart + slot.durationHours * 60;
+
+        return selectedStart < bookedEnd &&
+            selectedEnd > bookedStart;
+    });
+};
+
 function Home({ search }) {
     const { showToast } = useToast();
 
@@ -9,6 +124,21 @@ function Home({ search }) {
         useState([]);
 
     const [slots, setSlots] =
+        useState({});
+
+    const [bookedSlots, setBookedSlots] =
+        useState({});
+
+    const [calendarMonths, setCalendarMonths] =
+        useState({});
+
+    const [selectedDates, setSelectedDates] =
+        useState({});
+
+    const [selectedTimes, setSelectedTimes] =
+        useState({});
+
+    const [selectedDurations, setSelectedDurations] =
         useState({});
 
     useEffect(() => {
@@ -49,6 +179,20 @@ function Home({ search }) {
                         response.data.availableDates,
                 }));
 
+                setBookedSlots((prev) => ({
+                    ...prev,
+
+                    [expertId]:
+                        response.data.bookedSlots || [],
+                }));
+
+                setCalendarMonths((prev) => ({
+                    ...prev,
+
+                    [expertId]:
+                        prev[expertId] || getMonthStart(),
+                }));
+
             } catch (error) {
 
                 console.log(error);
@@ -58,7 +202,8 @@ function Home({ search }) {
     const handleBookAppointment =
         async (
             expertId,
-            appointmentDate
+            appointmentDate,
+            options = {}
         ) => {
 
             try {
@@ -82,6 +227,7 @@ function Home({ search }) {
                         {
                             expertId,
                             appointmentDate,
+                            ...options,
                         },
                         {
                             headers: {
@@ -98,6 +244,20 @@ function Home({ search }) {
                     "success"
                 );
 
+                setSelectedDates((prev) => ({
+                    ...prev,
+
+                    [expertId]: "",
+                }));
+
+                setSelectedTimes((prev) => ({
+                    ...prev,
+
+                    [expertId]: "",
+                }));
+
+                fetchAvailableSlots(expertId);
+
             } catch (error) {
 
                 console.log(
@@ -112,6 +272,393 @@ function Home({ search }) {
                 );
             }
         };
+
+    const moveCalendarMonth = (expertId, direction) => {
+        setCalendarMonths((prev) => {
+            const currentMonth =
+                prev[expertId] || getMonthStart();
+
+            return {
+                ...prev,
+
+                [expertId]:
+                    new Date(
+                        currentMonth.getFullYear(),
+                        currentMonth.getMonth() + direction,
+                        1
+                    ),
+            };
+        });
+    };
+
+    const renderCalendar = (expert) => {
+        const expertId = expert._id;
+        const monthDate =
+            calendarMonths[expertId] || getMonthStart();
+        const todayKey = getTodayKey();
+        const selectedDate =
+            selectedDates[expertId] || "";
+        const selectedTime =
+            selectedTimes[expertId] || "";
+        const selectedDuration =
+            selectedDurations[expertId] || 1;
+        const expertBookedSlots =
+            bookedSlots[expertId] || [];
+        const fullDayBookedDates =
+            expertBookedSlots
+                .filter((slot) => !slot.hasCustomTime)
+                .map((slot) => slot.date);
+        const calendarDays =
+            getCalendarDays(monthDate);
+        const currentMonthStart =
+            getMonthStart();
+        const isCurrentMonth =
+            monthDate.getFullYear() ===
+                currentMonthStart.getFullYear() &&
+            monthDate.getMonth() ===
+                currentMonthStart.getMonth();
+
+        return (
+            <div className="
+                mt-5
+                rounded-xl
+                border
+                border-gray-200
+                bg-gray-50
+                p-4
+            ">
+                <div className="
+                    flex
+                    items-center
+                    justify-between
+                    gap-3
+                ">
+                    <button
+                        type="button"
+                        onClick={() =>
+                            moveCalendarMonth(expertId, -1)
+                        }
+                        disabled={isCurrentMonth}
+                        className="
+                            h-9
+                            w-9
+                            rounded-lg
+                            border
+                            border-gray-300
+                            bg-white
+                            text-lg
+                            font-bold
+                            text-gray-700
+                            disabled:cursor-not-allowed
+                            disabled:opacity-40
+                            hover:bg-gray-100
+                        "
+                        aria-label="Previous month"
+                    >
+                        {"<"}
+                    </button>
+
+                    <div className="text-center">
+                        <p className="
+                            text-sm
+                            font-bold
+                            text-black
+                        ">
+                            {monthFormatter.format(monthDate)}
+                        </p>
+                        <p className="
+                            text-xs
+                            text-gray-500
+                        ">
+                            Choose a custom date
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={() =>
+                            moveCalendarMonth(expertId, 1)
+                        }
+                        className="
+                            h-9
+                            w-9
+                            rounded-lg
+                            border
+                            border-gray-300
+                            bg-white
+                            text-lg
+                            font-bold
+                            text-gray-700
+                            hover:bg-gray-100
+                        "
+                        aria-label="Next month"
+                    >
+                        {">"}
+                    </button>
+                </div>
+
+                <div className="
+                    mt-4
+                    grid
+                    grid-cols-7
+                    gap-1
+                    text-center
+                    text-xs
+                    font-bold
+                    text-gray-500
+                ">
+                    {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
+                        (day) => (
+                            <span key={day}>
+                                {day}
+                            </span>
+                        )
+                    )}
+                </div>
+
+                <div className="
+                    mt-2
+                    grid
+                    grid-cols-7
+                    gap-1
+                ">
+                    {calendarDays.map((day, index) => {
+                        if (!day) {
+                            return (
+                                <span
+                                    key={`blank-${index}`}
+                                    className="h-10"
+                                />
+                            );
+                        }
+
+                        const dateKey = getDateKey(day);
+                        const isPast =
+                            dateKey < todayKey;
+                        const isBooked =
+                            fullDayBookedDates.includes(dateKey);
+                        const isSelected =
+                            selectedDate === dateKey;
+                        const isDisabled =
+                            isPast || isBooked;
+
+                        return (
+                            <button
+                                key={dateKey}
+                                type="button"
+                                disabled={isDisabled}
+                                onClick={() =>
+                                    {
+                                        setSelectedDates((prev) => ({
+                                            ...prev,
+
+                                            [expertId]: dateKey,
+                                        }));
+
+                                        setSelectedTimes((prev) => ({
+                                            ...prev,
+
+                                            [expertId]: "",
+                                        }));
+                                    }
+                                }
+                                className={`
+                                    h-10
+                                    rounded-lg
+                                    text-sm
+                                    font-semibold
+                                    transition
+                                    ${isSelected
+                                        ? "bg-black text-white shadow-md"
+                                        : "bg-white text-gray-800 hover:bg-black hover:text-white"}
+                                    ${isDisabled
+                                        ? "cursor-not-allowed bg-gray-100 text-gray-300 hover:bg-gray-100 hover:text-gray-300"
+                                        : ""}
+                                `}
+                                title={
+                                    isBooked
+                                        ? "Already booked"
+                                        : dateKey
+                                }
+                            >
+                                {day.getDate()}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                <div className="
+                    mt-4
+                    flex
+                    flex-col
+                    gap-3
+                    sm:flex-row
+                    sm:items-center
+                    sm:justify-between
+                ">
+                    <p className="
+                        text-sm
+                        font-semibold
+                        text-gray-700
+                    ">
+                        {selectedDate
+                            ? `Selected: ${dateFormatter.format(new Date(`${selectedDate}T00:00:00`))}`
+                            : "Select a date from the calendar"}
+                    </p>
+                </div>
+
+                <div className="
+                    mt-4
+                    rounded-lg
+                    bg-white
+                    p-3
+                    shadow-sm
+                ">
+                    <label
+                        htmlFor={`duration-${expertId}`}
+                        className="
+                            text-xs
+                            font-bold
+                            uppercase
+                            text-gray-500
+                        "
+                    >
+                        Number of hours
+                    </label>
+
+                    <select
+                        id={`duration-${expertId}`}
+                        value={selectedDuration}
+                        onChange={(event) => {
+                            setSelectedDurations((prev) => ({
+                                ...prev,
+
+                                [expertId]: Number(event.target.value),
+                            }));
+
+                            setSelectedTimes((prev) => ({
+                                ...prev,
+
+                                [expertId]: "",
+                            }));
+                        }}
+                        className="
+                            mt-2
+                            w-full
+                            rounded-lg
+                            border
+                            border-gray-300
+                            bg-white
+                            px-3
+                            py-2
+                            font-semibold
+                            text-gray-800
+                            outline-none
+                            focus:border-black
+                        "
+                    >
+                        {durationOptions.map((hours) => (
+                            <option
+                                key={hours}
+                                value={hours}
+                            >
+                                {hours} {hours === 1 ? "hour" : "hours"}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="
+                    mt-4
+                    grid
+                    grid-cols-2
+                    gap-2
+                    sm:grid-cols-3
+                ">
+                    {timeOptions.map((time) => {
+                        const isTimeDisabled =
+                            !selectedDate ||
+                            hasTimeConflict(
+                                expertBookedSlots,
+                                selectedDate,
+                                time,
+                                selectedDuration
+                            );
+                        const isTimeSelected =
+                            selectedTime === time;
+
+                        return (
+                            <button
+                                key={time}
+                                type="button"
+                                disabled={isTimeDisabled}
+                                onClick={() =>
+                                    setSelectedTimes((prev) => ({
+                                        ...prev,
+
+                                        [expertId]: time,
+                                    }))
+                                }
+                                className={`
+                                    rounded-lg
+                                    px-3
+                                    py-2
+                                    text-sm
+                                    font-bold
+                                    transition
+                                    ${isTimeSelected
+                                        ? "bg-black text-white"
+                                        : "bg-white text-gray-800 hover:bg-black hover:text-white"}
+                                    ${isTimeDisabled
+                                        ? "cursor-not-allowed bg-gray-100 text-gray-300 hover:bg-gray-100 hover:text-gray-300"
+                                        : ""}
+                                `}
+                                title={
+                                    isTimeDisabled && selectedDate
+                                        ? "This time overlaps another booking"
+                                        : time
+                                }
+                            >
+                                {formatTime(time)}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                <button
+                    type="button"
+                    disabled={!selectedDate || !selectedTime}
+                    onClick={() =>
+                        handleBookAppointment(
+                            expertId,
+                            selectedDate,
+                            {
+                                appointmentTime: selectedTime,
+                                durationHours: selectedDuration,
+                            }
+                        )
+                    }
+                    className="
+                        mt-4
+                        w-full
+                        rounded-lg
+                        bg-red-500
+                        px-4
+                        py-2
+                        text-sm
+                        font-bold
+                        text-white
+                        transition
+                        hover:bg-red-600
+                        disabled:cursor-not-allowed
+                        disabled:bg-gray-300
+                    "
+                >
+                    Book Custom Time
+                </button>
+            </div>
+        );
+    };
 
     const filteredExperts =
         experts.filter((expert) => {
@@ -381,6 +928,9 @@ function Home({ search }) {
                                 )}
 
                             </div>
+
+                            {slots[expert._id] &&
+                                renderCalendar(expert)}
 
                         </div>
 
