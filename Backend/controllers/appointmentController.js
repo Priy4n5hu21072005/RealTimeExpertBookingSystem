@@ -60,8 +60,40 @@ const getAvailableSlots = async (req,res)=>{
         res.status(500).json({message:error.message});
     }
 };
+const getMyAppointments =
+    async (req, res) => {
+
+        try {
+
+            const appointments =
+                await Appointment.find({
+                    customer:
+                        req.user._id,
+                })
+                    .populate({
+                        path: "expert",
+                        populate: {
+                            path: "user",
+                            select:
+                                "name email",
+                        },
+                    });
+
+            res.status(200).json(
+                appointments
+            );
+
+        } catch (error) {
+
+            res.status(500).json({
+                message:
+                    error.message,
+            });
+        }
+    };
 
 module.exports = {
     bookAppointment,
     getAvailableSlots,
+    getMyAppointments,
 };

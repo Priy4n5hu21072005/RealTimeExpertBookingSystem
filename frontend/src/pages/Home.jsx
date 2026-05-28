@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
+import { useToast } from "../context/ToastContext";
 
 function Home({ search }) {
+    const { showToast } = useToast();
 
     const [experts, setExperts] =
         useState([]);
@@ -66,8 +68,9 @@ function Home({ search }) {
 
                 if (!token) {
 
-                    alert(
-                        "Please login first"
+                    showToast(
+                        "Please login first",
+                        "warning"
                     );
 
                     return;
@@ -90,8 +93,9 @@ function Home({ search }) {
 
                 console.log(response.data);
 
-                alert(
-                    "Appointment booked successfully"
+                showToast(
+                    "Appointment booked successfully",
+                    "success"
                 );
 
             } catch (error) {
@@ -101,9 +105,10 @@ function Home({ search }) {
                     error.message
                 );
 
-                alert(
+                showToast(
                     error.response?.data?.message ||
-                    "Error booking appointment"
+                    "Error booking appointment",
+                    "error"
                 );
             }
         };
