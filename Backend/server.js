@@ -11,17 +11,35 @@ dotenv.config();
 connectDB();
 
 const app = express();
+const normalizeOrigin = (origin) =>
+    origin?.replace(/\/$/, "");
+
+const allowedOrigins = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "https://real-time-expert-booking-system-hazel.vercel.app",
+    ...(process.env.CORS_ORIGIN
+        ? process.env.CORS_ORIGIN.split(",").map((origin) => origin.trim())
+        : []),
+]
+    .filter(Boolean)
+    .map(normalizeOrigin);
+
 const corsOptions = {
-    origin: [
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "https://real-time-expert-booking-system-hazel.vercel.app/"
-    ],
+    origin(origin, callback) {
+        if (
+            !origin ||
+            allowedOrigins.includes("*") ||
+            allowedOrigins.includes(normalizeOrigin(origin))
+        ) {
+            return callback(null, true);
+        }
+
+        return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true
 };
-app.use(cors({
-    origin: process.env.CORS_ORIGIN || "*"
-}));
+app.use(cors(corsOptions));
 app.use(express.json());
 
 app.get("/", (req, res) => {
