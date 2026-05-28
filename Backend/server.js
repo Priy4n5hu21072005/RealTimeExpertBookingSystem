@@ -11,8 +11,14 @@ dotenv.config();
 connectDB();
 
 const app = express();
-const corsOrigin = process.env.CORS_ORIGIN || "*";
-
+const corsOptions = {
+    origin: [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://real-time-expert-booking-system-hazel.vercel.app/"
+    ],
+    credentials: true
+};
 app.use(cors({ origin: corsOrigin }));
 app.use(express.json());
 
