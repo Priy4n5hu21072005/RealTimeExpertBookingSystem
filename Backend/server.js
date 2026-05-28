@@ -8,7 +8,6 @@ const expertRoutes = require("./routes/expertRouter");
 const appointmentRoutes = require("./routes/appointmentRoutes");
 
 dotenv.config();
-connectDB();
 
 const app = express();
 const normalizeOrigin = (origin) =>
@@ -47,7 +46,13 @@ app.get("/", (req, res) => {
 });
 
 app.get("/health", (req, res) => {
-    res.status(200).json({ status: "ok" });
+    res.status(200).json({
+        status: "ok",
+        database:
+            require("mongoose").connection.readyState === 1
+                ? "connected"
+                : "disconnected",
+    });
 });
 
 app.use("/api/auth", authRoutes);
@@ -67,8 +72,14 @@ app.get("/api/protected", protect, (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+const startServer = async () => {
+    await connectDB();
+
+    app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+    });
+};
+
+startServer();
 
 module.exports = app;
