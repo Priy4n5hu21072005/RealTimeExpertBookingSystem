@@ -58,7 +58,6 @@ function Appointments() {
 
             } catch (error) {
 
-                console.log(error);
             }
         };
 

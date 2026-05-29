@@ -54,8 +54,6 @@ function CreateExpertProfile() {
           }
         );
 
-      console.log(response.data);
-
       showToast(
         "Expert profile created",
         "success"
@@ -69,10 +67,6 @@ function CreateExpertProfile() {
       setHourlyRate("");
 
     } catch (error) {
-
-      console.log(
-        error.response?.data || error.message
-      );
 
       showToast(
         error.response?.data?.message || 

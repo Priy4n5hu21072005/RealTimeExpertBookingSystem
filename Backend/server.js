@@ -10,37 +10,40 @@ const appointmentRoutes = require("./routes/appointmentRoutes");
 dotenv.config();
 
 const app = express();
-const normalizeOrigin = (origin) =>
-    origin?.replace(/\/$/, "");
 
+// --------------- CORS ---------------
 const allowedOrigins = [
-    "http://localhost:5173",
-    "http://localhost:3000",
-    "https://real-time-expert-booking-system-hazel.vercel.app",
-    ...(process.env.CORS_ORIGIN
-        ? process.env.CORS_ORIGIN.split(",").map((origin) => origin.trim())
-        : []),
-]
-    .filter(Boolean)
-    .map(normalizeOrigin);
+    process.env.CLIENT_URL,
+].filter(Boolean).map((origin) => origin.replace(/\/$/, ""));
+
+// In development, also allow localhost
+if (process.env.NODE_ENV !== "production") {
+    allowedOrigins.push("http://localhost:5173");
+    allowedOrigins.push("http://localhost:3000");
+}
 
 const corsOptions = {
     origin(origin, callback) {
-        if (
-            !origin ||
-            allowedOrigins.includes("*") ||
-            allowedOrigins.includes(normalizeOrigin(origin))
-        ) {
+        // Allow requests with no origin (mobile apps, Postman, curl)
+        if (!origin) {
+            return callback(null, true);
+        }
+
+        const normalizedOrigin = origin.replace(/\/$/, "");
+
+        if (allowedOrigins.includes(normalizedOrigin)) {
             return callback(null, true);
         }
 
         return callback(new Error("Not allowed by CORS"));
     },
-    credentials: true
+    credentials: true,
 };
+
 app.use(cors(corsOptions));
 app.use(express.json());
 
+// --------------- Health / Root ---------------
 app.get("/", (req, res) => {
     res.send("Expert Booking System API is working!");
 });
@@ -55,21 +58,12 @@ app.get("/health", (req, res) => {
     });
 });
 
+// --------------- API Routes ---------------
 app.use("/api/auth", authRoutes);
 app.use("/api/experts", expertRoutes);
 app.use("/api/appointments", appointmentRoutes);
 
-app.use("/auth", authRoutes);
-app.use("/experts", expertRoutes);
-app.use("/appointments", appointmentRoutes);
-
-app.get("/api/protected", protect, (req, res) => {
-    res.json({
-        message: "Protected route accessed",
-        user: req.user,
-    });
-});
-
+// --------------- Start Server ---------------
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
@@ -81,5 +75,3 @@ const startServer = async () => {
 };
 
 startServer();
-
-module.exports = app;

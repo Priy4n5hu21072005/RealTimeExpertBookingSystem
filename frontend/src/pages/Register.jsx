@@ -13,14 +13,12 @@ function Register(){
         e.preventDefault();
         try{
             const response = await API.post('/auth/register',{name,email,password,role});
-            console.log(response.data);
             showToast('Registration successful!', 'success');
             setTimeout(() => {
                 navigate('/login');
             }, 1000);
         }
         catch(error){
-            console.log(error.response?.data || error.message);
             showToast(error.response?.data?.message || 'Registration failed', 'error');
         }
     };

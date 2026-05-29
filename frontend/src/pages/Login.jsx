@@ -10,7 +10,6 @@ function Login(){
     const handleLogin = async (e)=>{e.preventDefault();
         try{
             const response = await API.post('/auth/login',{email,password});
-            console.log(response.data);
             localStorage.setItem('token',response.data.token);
             showToast("Login Successful", "success");
             // Delay redirection slightly so the user sees the success toast
@@ -19,7 +18,6 @@ function Login(){
             }, 1000);
         }
         catch(error){
-            console.log(error.response?.data || error.message);
             showToast(error.response?.data?.message || "Login Failed", "error");
         }
     };

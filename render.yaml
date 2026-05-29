@@ -3,6 +3,7 @@ services:
     name: expert-booking-system-backend
     runtime: node
     plan: free
+    rootDir: Backend
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /health
@@ -13,5 +14,5 @@ services:
         sync: false
       - key: JWT_SECRET
         sync: false
-      - key: CORS_ORIGIN
-        value: "*"
+      - key: CLIENT_URL
+        value: https://your-frontend-app.vercel.app

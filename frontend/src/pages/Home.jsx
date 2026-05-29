@@ -157,8 +157,6 @@ function Home({ search }) {
             setExperts(response.data);
 
         } catch (error) {
-
-            console.log(error);
         }
     };
 
@@ -194,8 +192,6 @@ function Home({ search }) {
                 }));
 
             } catch (error) {
-
-                console.log(error);
             }
         };
 
@@ -237,8 +233,6 @@ function Home({ search }) {
                         }
                     );
 
-                console.log(response.data);
-
                 showToast(
                     "Appointment booked successfully",
                     "success"
@@ -259,11 +253,6 @@ function Home({ search }) {
                 fetchAvailableSlots(expertId);
 
             } catch (error) {
-
-                console.log(
-                    error.response?.data ||
-                    error.message
-                );
 
                 showToast(
                     error.response?.data?.message ||
